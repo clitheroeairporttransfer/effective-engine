@@ -1,29 +1,11 @@
 steps:
-  # Step 1: Install dependencies
-  - name: 'gcr.io/cloud-builders/npm'
-    args: ['install']
+  # Step 1: Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/effective-engine:$COMMIT_SHA', '.']
 
-  # Step 2: Run tests
-  - name: 'gcr.io/cloud-builders/npm'
-    args: ['test']
+  # Step 2: Push the image to Artifact Registry / Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/effective-engine:$COMMIT_SHA']
 
-  # Step 3: Build the project
-  - name: 'gcr.io/cloud-builders/npm'
-    args: ['run', 'build']
-
-  # Step 4: Build Docker image (optional - uncomment if you have a Dockerfile)
-  # - name: 'gcr.io/cloud-builders/docker'
-  #   args: ['build', '-t', 'gcr.io/$PROJECT_ID/effective-engine:$COMMIT_SHA', '.']
-
-# Options
 options:
-  machineType: 'N1_HIGHCPU_8'
   logging: CLOUD_LOGGING_ONLY
-
-# Images (optional - configure if pushing to Container Registry)
-# images:
-#   - 'gcr.io/$PROJECT_ID/effective-engine:$COMMIT_SHA'
-#   - 'gcr.io/$PROJECT_ID/effective-engine:latest'
-
-# Timeout
-timeout: '1800s'

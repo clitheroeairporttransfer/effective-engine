@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - Clitheroe</title>
+  <style>body{font-family:Arial;margin:10px}button{padding:8px;margin:4px}</style>
+</head>
+<body>
+  <h2>Admin: Bookings</h2>
+  <div id="list">Loading...</div>
+  <script>
+    async function load(){
+      const res = await fetch('/admin/bookings', { headers: { 'x-api-key': prompt('Enter admin API key') } });
+      if (!res.ok) { document.getElementById('list').innerText = 'Failed to load: ' + res.status; return; }
+      const bookings = await res.json();
+      document.getElementById('list').innerHTML = bookings.map(b => `
+        <div style="border:1px solid #ccc;padding:8px;margin:8px">
+          <div><strong>${b.pickup} → ${b.dropoff}</strong></div>
+          <div>${b.passengerName} • ${b.passengerPhone}</div>
+          <div>Status: ${b.status} • twb_id: ${b.twb_id || '-'} </div>
+          <div>
+            <button onclick="forward('${b.id}')">Forward to TaxiWebBooker</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    async function forward(id){
+      const key = prompt('Enter admin API key');
+      const res = await fetch('/admin/bookings/' + id + '/forward', { method:'POST', headers:{ 'x-api-key': key }});
+      if (res.ok) { alert('Forwarded'); load(); } else { alert('Failed: ' + res.status); }
+    }
+    load();
+  </script>
+</body>
+</html>

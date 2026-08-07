@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Driver App (PWA) - Clitheroe</title>
+  <style>body{font-family:Arial;margin:10px}button{padding:10px;margin:5px}</style>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <h2>Driver App</h2>
+  <div id="info">Loading...</div>
+  <div id="jobs"></div>
+  <script>
+    const token = location.pathname.split('/').slice(-1)[0];
+    document.getElementById('info').innerText = 'Driver token: ' + token;
+    async function loadJobs(){
+      const res = await fetch('/driver/' + token + '/jobs');
+      if (res.status === 200){
+        const data = await res.json();
+        renderJobs(data.jobs);
+      } else {
+        document.getElementById('jobs').innerText = 'Failed to load jobs: ' + res.status;
+      }
+    }
+    function renderJobs(jobs){
+      const el = document.getElementById('jobs');
+      if (!jobs || jobs.length === 0) { el.innerHTML = '<p>No jobs</p>'; return; }
+      el.innerHTML = jobs.map(j => `
+        <div style="border:1px solid #ccc;padding:8px;margin:8px">
+          <div><strong>${j.pickup} → ${j.dropoff}</strong></div>
+          <div>${j.passengerName} • ${j.passengerPhone} • ${j.datetime}</div>
+          <div>Status: ${j.status}</div>
+          <div>
+            <button onclick="action('${j.id}','accept')">Accept</button>
+            <button onclick="action('${j.id}','reject')">Reject</button>
+            <button onclick="action('${j.id}','arrive')">Arrived</button>
+            <button onclick="action('${j.id}','complete')">Complete</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    async function action(id,act){
+      const res = await fetch('/driver/' + token + '/jobs/' + id + '/' + act, { method:'POST' });
+      if (res.ok) { loadJobs(); } else { alert('Action failed: ' + res.status); }
+    }
+    loadJobs();
+    const socket = io();
+    socket.on('booking_offered', (data) => { console.log('offered', data); loadJobs(); });
+    socket.on('booking_accepted', (data) => { console.log('accepted', data); loadJobs(); });
+  </script>
+</body>
+</html>
